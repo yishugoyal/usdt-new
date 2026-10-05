@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { Transporter } from 'nodemailer';
 
 interface EmailConfig {
   host: string;
@@ -10,9 +10,9 @@ interface EmailConfig {
   };
 }
 
-let transporter: nodemailer.Transporter | null = null;
+let transporter: Transporter | null = null;
 
-function getTransporter(): nodemailer.Transporter {
+function getTransporter(): Transporter {
   if (!transporter) {
     const config: EmailConfig = {
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
