@@ -11,11 +11,17 @@ function getSanitizedUrl(url: string | undefined): string {
 
 const supabaseUrl = getSanitizedUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-// Use service_role key for server-side operations if valid, fallback to anon key
+// Server-side database operations should use SUPABASE_SERVICE_ROLE_KEY to bypass RLS securely
 const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim().replace(/^["']|["']$/g, '');
 const isPlaceholder = !serviceKey || serviceKey.includes('...') || serviceKey.length < 25;
 const rawAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
-const supabaseKey = (isPlaceholder ? rawAnonKey : serviceKey) || 'placeholder-anon-key';
+const supabaseKey = (isPlaceholder ? rawAnonKey : serviceKey) || 'placeholder-key';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
+
 
