@@ -574,10 +574,25 @@ CREATE INDEX IF NOT EXISTS "wallet_transactions_userId_idx"
 CREATE INDEX IF NOT EXISTS "wallet_transactions_type_idx"
   ON "wallet_transactions"("type");
 
--- 5. RLS: Disable RLS on new tables (service role key bypasses, but just in case)
--- If you have RLS enabled on users, run:
--- ALTER TABLE "users" DISABLE ROW LEVEL SECURITY;
--- ALTER TABLE "wallet_transactions" DISABLE ROW LEVEL SECURITY;
+-- 5. RLS Configuration
+-- This application handles authorization at the API layer (Next.js server API routes).
+-- To allow the server to read/write tables, run:
+ALTER TABLE IF EXISTS "users" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "user_profiles" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "bank_accounts" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "assets" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "user_balances" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "exchange_rates" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "orders" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "order_status_history" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "transactions" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "compliance_cases" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "audit_logs" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "system_settings" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "staff_users" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "admin_audit_logs" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "wallet_transactions" DISABLE ROW LEVEL SECURITY;
+
 
 -- 6. Add metadata and updatedAt columns to wallet_transactions (v2.1)
 ALTER TABLE "wallet_transactions"
