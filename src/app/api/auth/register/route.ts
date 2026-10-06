@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/lib/auth';
-import { sendEmail, generateVerificationToken } from '@/lib/email';
+import { sendEmail, generateVerificationToken, getBaseUrl } from '@/lib/email';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
@@ -67,7 +67,8 @@ export async function POST(req: Request) {
     if (profileError) throw profileError;
 
     // Send verification email
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    const baseUrl = getBaseUrl(req);
+    const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
     
     const emailHtml = `
       <!DOCTYPE html>

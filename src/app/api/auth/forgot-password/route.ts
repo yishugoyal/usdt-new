@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { sendEmail, generateResetToken } from '@/lib/email';
+import { sendEmail, generateResetToken, getBaseUrl } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -49,7 +49,8 @@ export async function POST(req: Request) {
     if (updateError) throw updateError;
 
     // Send email with reset link
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const baseUrl = getBaseUrl(req);
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
     
     const emailHtml = `
       <!DOCTYPE html>
