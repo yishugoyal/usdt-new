@@ -16,10 +16,15 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowResend(false);
+    setResendSuccess('');
 
     if (!email || !password) {
       setError('Please enter both email and password');
@@ -50,6 +55,9 @@ function LoginForm() {
         router.refresh();
       } else {
         setError(data.error || 'Authentication failed');
+        if (data.unverified) {
+          setShowResend(true);
+        }
       }
     } catch (e: any) {
       setError('Unable to connect to server. Please check your internet connection.');
@@ -57,6 +65,34 @@ function LoginForm() {
       setLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    setResending(true);
+    setResendSuccess('');
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResendSuccess('A new verification email has been sent! Please check your inbox.');
+        setShowResend(false);
+      } else {
+        setError(data.error || 'Failed to resend verification email');
+      }
+    } catch (e: any) {
+      setError('Failed to resend verification email');
+    } finally {
+      setResending(false);
+    }
+  };
+
 
 
   return (
@@ -93,9 +129,29 @@ function LoginForm() {
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+              {showResend && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  className="w-full text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-200 py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {resending ? 'Sending verification link...' : 'Resend Verification Email'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Resend Success Message */}
+          {resendSuccess && (
+            <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-emerald-700">{resendSuccess}</p>
             </div>
           )}
 
