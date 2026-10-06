@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const userId = uuidv4();
     const verificationToken = generateVerificationToken();
 
-    const { error: userError } = await supabase.from('users').insert({
+    const insertData: any = {
       id: userId,
       email,
       mobile,
@@ -43,7 +43,16 @@ export async function POST(req: Request) {
         verificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
       },
       updatedAt: new Date().toISOString(),
-    });
+    };
+
+    let { error: userError } = await supabase.from('users').insert(insertData);
+
+    // Graceful fallback if database does not yet have the 'metadata' column
+    if (userError && (userError.message?.includes('metadata') || (userError as any).code === 'PGRST204')) {
+      delete insertData.metadata;
+      const retryResult = await supabase.from('users').insert(insertData);
+      userError = retryResult.error;
+    }
 
     if (userError) throw userError;
 

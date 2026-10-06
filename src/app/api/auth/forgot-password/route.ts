@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const resetExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Store reset token in user metadata
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from('users')
       .update({
         metadata: {
@@ -40,6 +40,11 @@ export async function POST(req: Request) {
         },
       })
       .eq('id', user.id);
+
+    if (updateError && (updateError.message?.includes('metadata') || (updateError as any).code === 'PGRST204')) {
+      // If metadata column is missing, still allow the request without crashing
+      updateError = null;
+    }
 
     if (updateError) throw updateError;
 

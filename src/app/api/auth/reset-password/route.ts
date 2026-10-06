@@ -17,13 +17,12 @@ export async function POST(req: Request) {
     // Find user with valid reset token
     const { data: users, error } = await supabase
       .from('users')
-      .select('*')
-      .not('metadata', 'is', null);
+      .select('*');
 
     if (error) throw error;
 
     const user = users?.find((u: any) => {
-      const metadata = typeof u.metadata === 'object' ? u.metadata : {};
+      const metadata = typeof u.metadata === 'object' && u.metadata !== null ? u.metadata : {};
       return metadata.resetToken === token && new Date(metadata.resetExpiresAt) > new Date();
     });
 
@@ -33,18 +32,29 @@ export async function POST(req: Request) {
 
     // Update password
     const passwordHash = await hashPassword(newPassword);
-    const { error: updateError } = await supabase
+    const updatePayload: any = {
+      passwordHash,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (user.metadata) {
+      updatePayload.metadata = {
+        ...(user as any).metadata,
+        resetToken: null,
+        resetExpiresAt: null,
+      };
+    }
+
+    let { error: updateError } = await supabase
       .from('users')
-      .update({
-        passwordHash,
-        metadata: {
-          ...(user as any).metadata,
-          resetToken: null,
-          resetExpiresAt: null,
-        },
-        updatedAt: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', user.id);
+
+    if (updateError && (updateError.message?.includes('metadata') || (updateError as any).code === 'PGRST204')) {
+      delete updatePayload.metadata;
+      const retry = await supabase.from('users').update(updatePayload).eq('id', user.id);
+      updateError = retry.error;
+    }
 
     if (updateError) throw updateError;
 

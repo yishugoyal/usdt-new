@@ -12,13 +12,12 @@ export async function POST(req: Request) {
     // Find user with valid verification token
     const { data: users, error } = await supabase
       .from('users')
-      .select('*')
-      .not('metadata', 'is', null);
+      .select('*');
 
     if (error) throw error;
 
     const user = users?.find((u: any) => {
-      const metadata = typeof u.metadata === 'object' ? u.metadata : {};
+      const metadata = typeof u.metadata === 'object' && u.metadata !== null ? u.metadata : {};
       return metadata.verificationToken === token && new Date(metadata.verificationExpiresAt) > new Date();
     });
 
@@ -27,18 +26,29 @@ export async function POST(req: Request) {
     }
 
     // Update user as verified
-    const { error: updateError } = await supabase
+    const updatePayload: any = {
+      isEmailVerified: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (user.metadata) {
+      updatePayload.metadata = {
+        ...(user as any).metadata,
+        verificationToken: null,
+        verificationExpiresAt: null,
+      };
+    }
+
+    let { error: updateError } = await supabase
       .from('users')
-      .update({
-        isEmailVerified: true,
-        metadata: {
-          ...(user as any).metadata,
-          verificationToken: null,
-          verificationExpiresAt: null,
-        },
-        updatedAt: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', user.id);
+
+    if (updateError && (updateError.message?.includes('metadata') || (updateError as any).code === 'PGRST204')) {
+      delete updatePayload.metadata;
+      const retry = await supabase.from('users').update(updatePayload).eq('id', user.id);
+      updateError = retry.error;
+    }
 
     if (updateError) throw updateError;
 

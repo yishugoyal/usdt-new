@@ -9,6 +9,7 @@ CREATE TABLE "users" (
     "mfaEnabled" BOOLEAN NOT NULL DEFAULT false,
     "mfaSecret" TEXT,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "metadata" JSONB DEFAULT '{}'::jsonb,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -591,3 +592,8 @@ ALTER TABLE "wallet_transactions"
 CREATE UNIQUE INDEX IF NOT EXISTS "wallet_transactions_txHash_unique_idx"
   ON "wallet_transactions"("txHash")
   WHERE "txHash" IS NOT NULL;
+
+-- 8. Add metadata column to users for auth tokens & preferences (v2.3)
+ALTER TABLE "users"
+  ADD COLUMN IF NOT EXISTS "metadata" JSONB DEFAULT '{}'::jsonb;
+
